@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Don Macchiatos — Automated Payroll Processing System</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<!-- <link href="style/main.css" rel="stylesheet"> -->
+ <link rel="stylesheet" href="main.css">
+<style>
+/* ══ SCROLLBAR ══ */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN SCREEN ══ -->
+<div id="loginScreen">
+  <div class="login-glow"></div>
+
+  <div class="login-card">
+    <div class="login-logo">
+
+      <img src="image.png" alt="Logo" class="login-logo-icon">
+
+      <div class="login-title" id="loginCompanyName">
+        BioPay System
+      </div>
+
+      <div class="login-subtitle">
+        Biometric Attendance &amp; Payroll
+      </div>
+    </div>
+
+    <div class="login-branch-name" id="loginBranchLabel" style="display:none"></div>
+
+    <div class="login-field">
+      <label class="login-label">Select Branch</label>
+
+      <select class="login-input" id="loginBranchSelect" onchange="onBranchSelect()">
+        <option value="">-- Select Branch --</option>
+      </select>
+    </div>
+
+    <div class="login-field" id="loginPasswordField" style="display:none">
+      <label class="login-label">Branch Password</label>
+
+      <input class="login-input" type="password" id="loginPassword"
+      placeholder="Enter Branch Password"
+      onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+
+    <button class="login-btn" onclick="doLogin()">
+      𝐒𝐈𝐆𝐍 𝐈𝐍
+    </button>
+
+    <div class="login-error" id="loginError">
+      Incorrect password. Please try again.
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div class="app" id="mainApp" style="display:none">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+ <div class="sidebar-logo">
+    <div class="logo-icon">
+        <img src="image.png" alt="Don Macchiatos Logo">
+    </div>
+
+    <div>
+        <div class="logo-text">Don Macchiatos</div>
+        <div class="logo-sub">A.P.P.S Biometric Payroll</div>
+    </div>
+</div>
+  <div class="nav-section">
+    <div class="nav-label">Main</div>
+    <div class="nav-item active" onclick="showPage('dashboard')"><span class="nav-icon">🏠︎</span>Dashboard</div>
+    <div class="nav-item" onclick="showPage('biometric')"><span class="nav-icon">🫆</span>Biometric Enroll</div>
+    <div class="nav-item" onclick="showPage('attendance')"><span class="nav-icon">🕐</span>Attendance<span class="nav-badge" id="nbPending" style="display:none">0</span></div>
+    <div class="nav-item" onclick="showPage('employees')"><span class="nav-icon">👥</span>Employees</div>
+  </div>
+  <div class="nav-section" style="margin-top:10px">
+    <div class="nav-label">Payroll</div>
+    <div class="nav-item" onclick="showPage('payroll')"><span class="nav-icon">💰</span>Process Payroll</div>
+    <div class="nav-item" onclick="showPage('payslips')"><span class="nav-icon">📄</span>Payslips</div>
+    <div class="nav-item" onclick="showPage('deductions')"><span class="nav-icon">➖</span>Deductions</div>
+    <div class="nav-item" onclick="showPage('reports')"><span class="nav-icon">📊</span>Reports</div>
+  </div>
+  <div class="nav-section" style="margin-top:10px">
+    <div class="nav-label">Settings</div>
+    <div class="nav-item" onclick="showPage('branches')"><span class="nav-icon">🏢</span>Branches</div>
+    <div class="nav-item" onclick="showPage('settings')"><span class="nav-icon">⚙️</span>Configuration</div>
+  </div>
+  <div class="sidebar-bottom">
+    <div class="user-card" onclick="showPage('settings')">
+      <div class="user-avatar" id="sideAvatar">A</div>
+      <div>
+        <div class="user-name" id="sideUser">Administrator</div>
+        <div class="user-role" id="sideRole">HR Manager</div>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">❝ 𝐒𝐈𝐆𝐍 ⏻𝐔𝐓 ❞</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="pageTitle">Dashboard</div>
+      <div class="topbar-sub" id="pageDate"></div>
+    </div>
+    <div class="topbar-right">
+      <div class="branch-indicator" id="topbarBranch">
+        <div class="branch-dot"></div>
+        <span id="topbarBranchName">Branch</span>
+      </div>
+      <button class="btn btn-accent btn-sm" onclick="openModal('clockModal')">⏱ Clock In/Out</button>
+      <button class="btn btn-ghost btn-sm" onclick="showPage('biometric')">+ Enroll Fingerprint</button>
+      
+<button id="mobileViewBtn" onclick="toggleMobileView()">
+    📱 Mobile View
+</button>
+
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="pg-dashboard">
+    <div class="stats-row">
+      <div class="stat-card green"><div class="stat-icon">👥</div><div class="stat-value" id="dTotalEmp">0</div><div class="stat-label">Total Employees</div></div>
+      <div class="stat-card blue"><div class="stat-icon">✅</div><div class="stat-value" id="dPresent">0</div><div class="stat-label">Present Today</div></div>
+      <div class="stat-card amber"><div class="stat-icon">⏰</div><div class="stat-value" id="dLate">0</div><div class="stat-label">Late Today</div></div>
+      <div class="stat-card red"><div class="stat-icon">❌</div><div class="stat-value" id="dAbsent">0</div><div class="stat-label">Absent Today</div></div>
+    </div>
+    <div class="grid-2 mb-18">
+      <div class="card">
+        <div class="card-title"><span class="icon">🕐</span>Today's Attendance</div>
+        <div class="table-wrap">
+          <table id="dashAttTable">
+            <thead><tr><th>Employee</th><th>Time In</th><th>Status</th></tr></thead>
+            <tbody id="dashAttBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="icon">📊</span>Attendance Rate (30 days)</div>
+        <div id="deptRates"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">💰</span>Last Payroll Summary</div>
+      <div id="lastPayrollSummary" class="empty"><div class="empty-icon">💼</div><div class="empty-text">No payroll processed yet</div></div>
+    </div>
+  </div>
+
+  <!-- BIOMETRIC ENROLL -->
+  <div class="page" id="pg-biometric">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><span class="icon">👆</span>Biometric Enrollment</div>
+        <div class="form-row mb-18">
+          <div class="form-group">
+            <label>Select Employee</label>
+            <select id="bioEmpSelect"><option value="">— Choose employee —</option></select>
+          </div>
+          <div class="form-group">
+            <label>Fingerprint Finger</label>
+            <select id="bioFinger">
+              <option value="right_thumb">Right Thumb</option>
+              <option value="right_index">Right Index</option>
+              <option value="right_middle">Right Middle</option>
+              <option value="left_thumb">Left Thumb</option>
+              <option value="left_index">Left Index</option>
+            </select>
+          </div>
+        </div>
+        <div class="enroll-steps" id="enrollSteps">
+          <div class="step-dot" id="step0"></div>
+          <div class="step-dot" id="step1"></div>
+          <div class="step-dot" id="step2"></div>
+        </div>
+        <div class="scanner-container" id="bioScanner">
+          <div class="fingerprint-ring" id="fpRing"><div class="fp-icon" id="fpIcon">☁</div></div>
+          <div class="scanner-label" id="scannerLabel">Select employee to begin enrollment</div>
+          <div class="scanner-status" id="scannerStatus">IDLE</div>
+        </div>
+        <div class="flex gap-12 mt-18">
+          <button class="btn btn-primary" onclick="startEnroll()" style="flex:1">▶ Start Scan</button>
+          <button class="btn btn-ghost" onclick="resetEnroll()">↺ Reset</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="icon">📋</span>Enrolled Biometrics</div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Employee</th><th>Fingers</th><th>Enrolled</th><th></th></tr></thead><tbody id="enrolledTable"></tbody></table>
+        </div>
+        <div id="enrolledEmpty" class="empty" style="display:none"><div class="empty-icon">👆</div><div class="empty-text">No biometrics enrolled yet</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ATTENDANCE -->
+  <div class="page" id="pg-attendance">
+    <div class="flex justify-between items-center mb-18">
+      <div class="tabs" style="margin:0;width:auto">
+        <button class="tab-btn active" onclick="attTab('today',this)">Today</button>
+        <button class="tab-btn" onclick="attTab('week',this)">This Week</button>
+        <button class="tab-btn" onclick="attTab('month',this)">This Month</button>
+        <button class="tab-btn" onclick="attTab('all',this)">All</button>
+      </div>
+      <div class="flex gap-8 items-center">
+        <div class="search-box"><input id="attSearch" placeholder="Search employee…" oninput="renderAttendance()"></div>
+        <button class="btn btn-ghost btn-sm" onclick="exportAttCSV()">⬇ Export CSV</button>
+        <button class="btn btn-primary btn-sm" onclick="openModal('manualAttModal')">+ Manual Entry</button>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-value" id="attPresent">0</div><div class="stat-label">Present</div></div>
+      <div class="stat-card amber"><div class="stat-icon">⏰</div><div class="stat-value" id="attLate">0</div><div class="stat-label">Late Arrivals</div></div>
+      <div class="stat-card red"><div class="stat-icon">❌</div><div class="stat-value" id="attAbsent">0</div><div class="stat-label">Absent</div></div>
+      <div class="stat-card blue"><div class="stat-icon">📅</div><div class="stat-value" id="attHours">0h</div><div class="stat-label">Total Hours</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title flex justify-between" style="margin-bottom:12px">
+        <span><span class="icon">📋</span>Attendance Records</span>
+        <span class="text-sm" id="attCount"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Employee</th><th>Date</th><th>In</th><th>Out</th><th>Hours</th><th>OT Hours</th><th>Status</th><th>Method</th><th></th></tr></thead>
+          <tbody id="attBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMPLOYEES -->
+  <div class="page" id="pg-employees">
+    <div class="flex justify-between items-center mb-18">
+      <div class="search-box"><input id="empSearch" placeholder="Search employee…" oninput="renderEmployees()"></div>
+      <button class="btn btn-primary" onclick="openModal('empModal'); editEmpId=null; document.getElementById('empForm').reset()">+ Add Employee</button>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Name</th><th>Branch</th><th>Department</th><th>Position</th><th>Rate/Day</th><th>SSS</th><th>PhilHealth</th><th>Pag-IBIG</th><th>Status</th><th></th></tr></thead>
+          <tbody id="empBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAYROLL -->
+  <div class="page" id="pg-payroll">
+    <div class="grid-2 mb-18">
+      <div class="card">
+        <div class="card-title"><span class="icon">⚙️</span>Payroll Period Setup</div>
+        <div class="form-row">
+          <div class="form-group"><label>Period From</label><input type="date" id="payFrom"></div>
+          <div class="form-group"><label>Period To</label><input type="date" id="payTo"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Pay Type</label>
+            <select id="payType">
+              <option value="semi">Semi-monthly</option>
+              <option value="monthly">Monthly</option>
+              <option value="weekly">Weekly</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Department</label>
+            <select id="payDept">
+              <option value="all">All Departments</option>
+              <option>Engineering</option><option>Operations</option><option>Finance</option><option>Sales</option><option>HR</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="computePayroll()" style="width:100%;justify-content:center">⚡ Compute Payroll</button>
+      </div>
+      <div class="card" id="payrollSummaryCard">
+        <div class="card-title"><span class="icon">📊</span>Summary</div>
+        <div id="payrollSummaryBody" class="empty"><div class="empty-icon">💼</div><div class="empty-text">Set period and compute payroll</div></div>
+      </div>
+    </div>
+    <div class="card" id="payrollTableCard" style="display:none">
+      <div class="flex justify-between items-center mb-18">
+        <div class="card-title" style="margin:0"><span class="icon">📋</span>Payroll Register</div>
+        <div class="flex gap-8">
+          <button class="btn btn-ghost btn-sm" onclick="exportPayrollCSV()">⬇ Export CSV</button>
+          <button class="btn btn-green btn-sm" onclick="finalizePayroll()">✓ Finalize &amp; Save</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Employee</th><th>Dept</th><th>Days</th><th>Basic</th><th>OT Pay</th><th>Gross</th><th>SSS</th><th>PhilHealth</th><th>Pag-IBIG</th><th>Tax</th><th>Other Ded.</th><th>Net Pay</th><th></th></tr></thead>
+          <tbody id="payrollBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAYSLIPS -->
+  <div class="page" id="pg-payslips">
+    <div class="flex justify-between items-center mb-18">
+      <div class="search-box"><input id="slipSearch" placeholder="Search employee…" oninput="renderPayslips()"></div>
+      <select id="slipPeriodFilter" style="padding:8px 12px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);font-size:13px;" onchange="renderPayslips()">
+        <option value="all">All Periods</option>
+      </select>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Employee</th><th>Period</th><th>Gross</th><th>Deductions</th><th>Net Pay</th><th>Status</th><th></th></tr></thead>
+          <tbody id="slipBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEDUCTIONS -->
+  <div class="page" id="pg-deductions">
+    <div class="flex justify-between items-center mb-18">
+      <h3 style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700">Government Contributions &amp; Deductions</h3>
+      <button class="btn btn-primary btn-sm" onclick="openModal('dedModal'); editDedId=null; document.getElementById('dedForm').reset()">+ Add Deduction</button>
+    </div>
+    <div class="grid-2 mb-18">
+      <div class="card">
+        <div class="card-title"><span class="icon">🏛️</span>SSS Contribution Table</div>
+        <div class="text-sm mt-4 mb-18">Based on 2024 SSS schedule. Employee: 4.5% | Employer: 9.5%</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Salary Range</th><th>Employee Share</th><th>Employer Share</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">₱4,250 - ₱4,749</td><td>₱180.00</td><td>₱380.00</td></tr>
+              <tr><td class="mono">₱4,750 - ₱5,249</td><td>₱202.50</td><td>₱427.50</td></tr>
+              <tr><td class="mono">₱5,250 - ₱5,749</td><td>₱225.00</td><td>₱475.00</td></tr>
+              <tr><td class="mono">₱15,750 - ₱16,249</td><td>₱675.00</td><td>₱1,425.00</td></tr>
+              <tr><td class="mono">₱29,750+</td><td>₱1,350.00</td><td>₱2,850.00</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="icon">🏥</span>PhilHealth &amp; Pag-IBIG Rates</div>
+        <div>
+          <div class="payslip-row" style="border-color:var(--border)"><span>PhilHealth Rate</span><span class="fw-700">5% (2024)</span></div>
+          <div class="payslip-row" style="border-color:var(--border)"><span>Employee PhilHealth Share</span><span class="fw-700">2.5%</span></div>
+          <div class="payslip-row" style="border-color:var(--border)"><span>Pag-IBIG (Below ₱5K)</span><span class="fw-700">1%</span></div>
+          <div class="payslip-row" style="border-color:var(--border)"><span>Pag-IBIG (₱5K+)</span><span class="fw-700">2%</span></div>
+          <div class="payslip-row"><span>Pag-IBIG Maximum</span><span class="fw-700">₱100/mo</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">📝</span>Additional Deductions</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Employee</th><th>Type</th><th>Amount</th><th>Recurring</th><th>Remark</th><th>Start</th><th></th></tr></thead>
+          <tbody id="dedBody"></tbody>
+        </table>
+      </div>
+      <div id="dedEmpty" class="empty"><div class="empty-icon">📝</div><div class="empty-text">No additional deductions</div></div>
+    </div>
+  </div>
+
+  <!-- REPORTS -->
+  <div class="page" id="pg-reports">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="reportTab('attendance',this)">Attendance Report</button>
+      <button class="tab-btn" onclick="reportTab('payroll',this)">Payroll Report</button>
+      <button class="tab-btn" onclick="reportTab('biometric',this)">Biometric Audit</button>
+    </div>
+    <div id="report-attendance">
+      <div class="flex gap-12 items-center mb-18">
+        <div class="form-group" style="margin:0;flex:1"><label>From</label><input type="date" id="rAttFrom"></div>
+        <div class="form-group" style="margin:0;flex:1"><label>To</label><input type="date" id="rAttTo"></div>
+        <div class="form-group" style="margin:0;flex:1"><label>Department</label>
+          <select id="rAttDept"><option value="all">All</option><option>Engineering</option><option>Operations</option><option>Finance</option><option>Sales</option><option>HR</option></select>
+        </div>
+        <button class="btn btn-primary" style="margin-top:16px" onclick="genAttReport()">Generate</button>
+        <button class="btn btn-ghost" style="margin-top:16px" onclick="exportAttReport()">⬇ Export</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Employee</th><th>Dept</th><th>Days Present</th><th>Days Late</th><th>Days Absent</th><th>Total Hours</th><th>OT Hours</th><th>Attendance %</th></tr></thead>
+            <tbody id="rAttBody"></tbody>
+          </table>
+        </div>
+        <div id="rAttEmpty" class="empty"><div class="empty-icon">📊</div><div class="empty-text">Set date range and generate report</div></div>
+      </div>
+    </div>
+    <div id="report-payroll" style="display:none">
+      <div class="flex gap-12 items-center mb-18">
+        <div class="form-group" style="margin:0;flex:1"><label>Period</label>
+          <select id="rPayPeriod"><option value="all">All Periods</option></select>
+        </div>
+        <button class="btn btn-primary" style="margin-top:16px" onclick="genPayrollReport()">Generate</button>
+        <button class="btn btn-ghost" style="margin-top:16px" onclick="exportPayrollReport()">⬇ Export</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Employee</th><th>Period</th><th>Gross</th><th>SSS</th><th>PhilHealth</th><th>Pag-IBIG</th><th>Tax</th><th>Net Pay</th></tr></thead>
+            <tbody id="rPayBody"></tbody>
+          </table>
+        </div>
+        <div id="rPayEmpty" class="empty"><div class="empty-icon">💰</div><div class="empty-text">Select period and generate</div></div>
+      </div>
+    </div>
+    <div id="report-biometric" style="display:none">
+      <div class="card">
+        <div class="card-title"><span class="icon">👆</span>Biometric Clock Log</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Employee</th><th>Date/Time</th><th>Action</th><th>Finger Used</th><th>Confidence</th></tr></thead>
+            <tbody id="rBioBody"></tbody>
+          </table>
+        </div>
+        <div id="rBioEmpty" class="empty"><div class="empty-icon">👆</div><div class="empty-text">No biometric logs yet</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BRANCHES -->
+  <div class="page" id="pg-branches">
+    <div class="flex justify-between items-center mb-18">
+      <div>
+        <h2 style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px">Branch Management</h2>
+        <p class="text-sm mt-4">Manage all branches, assign passwords, and monitor per-branch data.</p>
+      </div>
+      <button class="btn btn-primary" onclick="openModal('branchModal'); editBranchId=null; document.getElementById('branchForm').reset(); document.getElementById('branchStatus').disabled=false;">+ Add Branch</button>
+    </div>
+
+    <div id="branchGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px"></div>
+    <div id="branchEmpty" class="empty card" style="display:none"><div class="empty-icon">🏢</div><div class="empty-text">No branches configured</div></div>
+
+    <div class="card mt-18">
+      <div class="card-title"><span class="icon">🌐</span>All Branches Overview</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Branch Name</th><th>Code</th><th>Location</th><th>Employees</th><th>Password</th><th>Status</th><th></th></tr></thead>
+          <tbody id="branchTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="page" id="pg-settings">
+    <div class="grid-2 mb-18">
+      <div class="card">
+        <div class="card-title"><span class="icon">🏢</span>Company Settings</div>
+        <div class="form-group"><label>Company Name</label><input id="cfgCompany" value="Don Macchiatos"></div>
+        <div class="form-group"><label>Address</label><input id="cfgAddress" value="123 Business Ave, Manila"></div>
+        <div class="form-group"><label>Tagline</label><input id="cfgTagline" value="MASARAP PERO HINDI MAHAL"></div>
+        <div class="form-group"><label>Contact Number</label><input id="cfgContact" value="+63 2 1234 5678"></div>
+        <div class="form-group"><label>Work Start Time</label><input type="time" id="cfgWorkStart" value="08:00"></div>
+        <div class="form-group"><label>Work End Time</label><input type="time" id="cfgWorkEnd" value="17:00"></div>
+        <div class="form-group"><label>Grace Period (minutes)</label><input type="number" id="cfgGrace" value="15" min="0" max="60"></div>
+        <button class="btn btn-primary mt-8" onclick="saveSettings()">💾 Save Settings</button>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="icon">💹</span>Payroll Configuration</div>
+        <div class="form-group"><label>Tax Rate (%) — Withholding</label><input type="number" id="cfgTax" value="5" step="0.5"></div>
+        <div class="form-group"><label>OT Rate Multiplier</label><input type="number" id="cfgOT" value="1.25" step="0.05"></div>
+        <div class="form-group"><label>Night Diff Rate Multiplier</label><input type="number" id="cfgND" value="1.10" step="0.05"></div>
+        <div class="form-group"><label>Holiday Pay Multiplier</label><input type="number" id="cfgHol" value="2.0" step="0.05"></div>
+        <div class="form-group"><label>De Minimis (monthly)</label><input type="number" id="cfgDeMin" value="2000"></div>
+        <div class="form-group"><label>13th Month Basis</label>
+          <select id="cfgThirteenth"><option value="basic">Basic Pay Only</option><option value="gross">Gross Pay</option></select>
+        </div>
+        <button class="btn btn-primary mt-8" onclick="saveSettings()">💾 Save Config</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">👤</span>HR Profile</div>
+      <div class="form-row">
+        <div class="form-group"><label>HR Manager Name</label><input id="cfgHRName" value="Administrator"></div>
+        <div class="form-group"><label>Role</label><input id="cfgHRRole" value="HR Manager"></div>
+      </div>
+      <button class="btn btn-primary" onclick="saveHRProfile()">💾 Save Profile</button>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+
+<!-- ══ MODALS ══ -->
+
+<!-- CLOCK IN/OUT -->
+<div class="modal-overlay" id="clockModal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header"><div class="modal-title">⏱ Biometric Clock In/Out</div><button class="close-btn" onclick="closeModal('clockModal')">×</button></div>
+    <div class="modal-body">
+      <div class="clock-display">
+        <div class="clock-time" id="modalClock">--:--:--</div>
+        <div class="clock-date" id="modalDate"></div>
+      </div>
+      <div class="form-group mb-18">
+        <label>Employee</label>
+        <select id="clockEmp"><option value="">— Select employee —</option></select>
+      </div>
+      <div class="scanner-container" id="clockScanner" style="min-height:160px">
+        <div class="fingerprint-ring" id="clockFpRing"><div class="fp-icon" id="clockFpIcon">☁</div></div>
+        <div class="scanner-label" id="clockLabel">Select employee then scan</div>
+        <div class="scanner-status" id="clockStatus">READY</div>
+      </div>
+      <div class="flex gap-12 mt-18">
+        <button class="btn btn-green" onclick="doBioScan('in')" style="flex:1">⬆ Clock IN</button>
+        <button class="btn btn-accent" onclick="doBioScan('out')" style="flex:1">⬇ Clock OUT</button>
+      </div>
+      <div class="mt-14 text-sm" style="text-align:center">or enter PIN manually</div>
+      <div class="form-row mt-8">
+        <div class="form-group"><label>Manual PIN</label><input type="password" id="clockPin" placeholder="4-digit PIN" maxlength="4"></div>
+        <div class="form-group" style="display:flex;align-items:flex-end">
+          <button class="btn btn-ghost" onclick="doManualPin()" style="width:100%">Submit</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('clockModal')">Close</button></div>
+  </div>
+</div>
+
+<!-- ADD/EDIT EMPLOYEE -->
+<div class="modal-overlay" id="empModal">
+  <div class="modal wide">
+    <div class="modal-header"><div class="modal-title" id="empModalTitle">Add Employee</div><button class="close-btn" onclick="closeModal('empModal')">×</button></div>
+    <div class="modal-body">
+      <form id="empForm" onsubmit="return false">
+        <div class="form-row">
+          <div class="form-group"><label>First Name *</label><input id="empFname" required></div>
+          <div class="form-group"><label>Last Name *</label><input id="empLname" required></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Employee ID *</label><input id="empId" required placeholder="EMP-001"></div>
+          <div class="form-group"><label>Position *</label><input id="empPos" required></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Branch</label>
+            <select id="empBranch"><option value="">— Assign Branch —</option></select>
+          </div>
+          <div class="form-group"><label>Department</label>
+            <select id="empDept"><option>Engineering</option><option>Operations</option><option>Finance</option><option>Sales</option><option>Human Resources</option><option>Administration</option></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Employment Type</label>
+            <select id="empType"><option value="regular">Regular</option><option value="probationary">Probationary</option><option value="contractual">Contractual</option><option value="parttime">Part-time</option></select>
+          </div>
+          <div class="form-group"><label>Daily Rate (₱)</label><input type="number" id="empDayRate" min="0" step="0.01" placeholder="700"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>PIN (4 digits)</label><input type="password" id="empPin" maxlength="4" placeholder="4-digit clock-in PIN"></div>
+          <div class="form-group"><label>Date Hired</label><input type="date" id="empHired"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Status</label>
+            <select id="empStatus"><option value="active">Active</option><option value="inactive">Inactive</option><option value="on_leave">On Leave</option></select>
+          </div>
+          <div class="form-group"><label>SSS Number</label><input id="empSSS" placeholder="XX-XXXXXXX-X"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>PhilHealth Number</label><input id="empPH" placeholder="XXXX-XXXX-XXXX"></div>
+          <div class="form-group"><label>Pag-IBIG Number</label><input id="empPI" placeholder="XXXX-XXXX-XXXX"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>TIN</label><input id="empTIN" placeholder="XXX-XXX-XXXX"></div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('empModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEmployee()">Save Employee</button>
+    </div>
+  </div>
+</div>
+
+<!-- BRANCH MODAL -->
+<div class="modal-overlay" id="branchModal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header"><div class="modal-title" id="branchModalTitle">Add Branch</div><button class="close-btn" onclick="closeModal('branchModal')">×</button></div>
+    <div class="modal-body">
+      <form id="branchForm" onsubmit="return false">
+        <div class="form-row">
+          <div class="form-group"><label>Branch Name *</label><input id="branchName" required placeholder="e.g. Main Branch"></div>
+          <div class="form-group"><label>Branch Code *</label><input id="branchCode" required placeholder="e.g. BR-001" style="text-transform:uppercase"></div>
+        </div>
+        <div class="form-group"><label>Location / Address</label><input id="branchLocation" placeholder="City, Province"></div>
+        <div class="form-row">
+          <div class="form-group"><label>Manager Name</label><input id="branchManager" placeholder="Branch Manager"></div>
+          <div class="form-group"><label>Contact Number</label><input id="branchContact" placeholder="+63 9XX XXX XXXX"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Branch Password *</label>
+            <input type="password" id="branchPassword" required placeholder="Set a secure password">
+          </div>
+          <div class="form-group">
+            <label>Confirm Password *</label>
+            <input type="password" id="branchPasswordConfirm" required placeholder="Confirm password">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="branchStatus"><option value="active">Active</option><option value="inactive">Inactive</option></select>
+          <div id="branchStatusNote" style="display:none;font-size:11px;color:var(--amber,#f59e0b);margin-top:4px">⚠ Only the currently logged-in branch can change its own status.</div>
+        </div>
+        <div class="form-group"><label>Notes</label><textarea id="branchNotes" placeholder="Optional notes about this branch…"></textarea></div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('branchModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveBranch()">Save Branch</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHANGE BRANCH PASSWORD -->
+<div class="modal-overlay" id="changePwModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header"><div class="modal-title">🔑 Change Branch Password</div><button class="close-btn" onclick="closeModal('changePwModal')">×</button></div>
+    <div class="modal-body">
+      <p class="text-sm mb-18" id="changePwBranchName" style="font-weight:600;color:var(--ink);font-size:14px"></p>
+      <div class="form-group"><label>Current Password</label><input type="password" id="changePwCurrent" placeholder="Enter current password"></div>
+      <div class="form-group"><label>New Password</label><input type="password" id="changePwNew" placeholder="Enter new password"></div>
+      <div class="form-group"><label>Confirm New Password</label><input type="password" id="changePwConfirm" placeholder="Confirm new password"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('changePwModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveChangePassword()">Update Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAYSLIP VIEW -->
+<div class="modal-overlay" id="payslipModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title">📄 Payslip</div>
+      <div class="flex gap-8">
+        <button class="btn btn-ghost btn-sm" onclick="printPayslip()">🖨 Print</button>
+        <button class="close-btn" onclick="closeModal('payslipModal')">×</button>
+      </div>
+    </div>
+    <div class="modal-body"><div id="payslipContent"></div></div>
+  </div>
+</div>
+
+<!-- MANUAL ATTENDANCE -->
+<div class="modal-overlay" id="manualAttModal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header"><div class="modal-title">+ Manual Attendance Entry</div><button class="close-btn" onclick="closeModal('manualAttModal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Employee</label><select id="mAttEmp"><option value="">— Select —</option></select></div>
+      <div class="form-row">
+        <div class="form-group"><label>Date</label><input type="date" id="mAttDate"></div>
+        <div class="form-group"><label>Status</label>
+          <select id="mAttStatus"><option value="present">Present</option><option value="absent">Absent</option><option value="leave">On Leave</option><option value="halfday">Half Day</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Time In</label><input type="time" id="mAttIn"></div>
+        <div class="form-group"><label>Time Out</label><input type="time" id="mAttOut"></div>
+      </div>
+      <div class="form-group"><label>OT Hours</label><input type="number" id="mAttOT" min="0" step="0.5" value="0"></div>
+      <div class="form-group"><label>Remarks</label><input id="mAttRemark" placeholder="Optional remarks"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('manualAttModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveManualAtt()">Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- DEDUCTION MODAL -->
+<div class="modal-overlay" id="dedModal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header"><div class="modal-title" id="dedModalTitle">Add Deduction</div><button class="close-btn" onclick="closeModal('dedModal')">×</button></div>
+    <div class="modal-body">
+      <form id="dedForm" onsubmit="return false">
+        <div class="form-group"><label>Employee</label><select id="dedEmp"><option value="">— Select —</option></select></div>
+        <div class="form-row">
+          <div class="form-group"><label>Type</label>
+            <select id="dedType">
+              <option value="Loan">SSS Loan</option><option value="Pagibig Loan">Pag-IBIG Loan</option>
+              <option value="Cash Advance">Cash Advance</option><option value="Absence">Absence Deduction</option>
+              <option value="Late">Late Penalty</option><option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Amount (₱)</label><input type="number" id="dedAmt" min="0" step="0.01"></div>
+        </div>
+        <div class="form-group"><label>Recurring</label>
+          <select id="dedRecur"><option value="once">One-time</option><option value="monthly">Monthly</option><option value="semi">Semi-monthly</option></select>
+        </div>
+        <div class="form-group"><label>Start Date</label><input type="date" id="dedStart"></div>
+        <div class="form-group"><label>Remarks</label><input id="dedRemark"></div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('dedModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveDeduction()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- <script src="script/main.js"></script> -->
+ <script src="main.js"></script>
+</body>
+</html>
