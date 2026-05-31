@@ -494,21 +494,3 @@ tbody tr:hover{background:var(--surface)}
     display: block;
     margin: 0 auto 20px;
 }
-.mobile-preview {
-    max-width: 390px;
-    margin: 0 auto;
-    border: 10px solid #222;
-    border-radius: 25px;
-    min-height: 844px;
-    overflow-x: hidden;
-    background: #fff;
-}
-
-.mobile-preview .sidebar {
-    display: none;
-}
-
-.mobile-preview .main-content {
-    width: 100%;
-    margin-left: 0;
-}
