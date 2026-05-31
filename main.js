@@ -1018,7 +1018,3 @@ function downloadCSV(filename,content){const a=document.createElement('a');a.hre
 })();
 
 init();
-
-function toggleMobileView() {
-    document.body.classList.toggle('mobile-preview');
-}
